@@ -16,7 +16,7 @@ except ImportError:
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/sheets.googleapis.com-python-quickstart.json
-SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly'
+SCOPES = 'https://www.googleapis.com/auth/spreadsheets'
 CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Google Sheets API Python Quickstart'
 
@@ -72,6 +72,35 @@ def main():
 
     for sheet in values:
         print(sheet['properties']['title'])
+
+
+    body = {
+      "requests": [
+        {
+            "updateSheetProperties": {
+                "properties":
+                {
+                  "sheetId": 1645117574,
+                  "title": "Jornada 1000",
+                },
+                "fields": "title"
+            }
+        }
+      ],
+      "includeSpreadsheetInResponse": False,
+      "responseIncludeGridData": False,
+    }
+        
+        
+    result = service.spreadsheets().batchUpdate(spreadsheetId=spreadsheetId, body=body).execute()
+    values = result.get('sheets', [])
+
+    # body = {
+    #     "destinationSpreadsheetId": spreadsheetId,
+    # }
+    # result = service.spreadsheets().sheets().copyTo(spreadsheetId=spreadsheetId, sheetId=559840847, body=body).execute()
+    # values = result.get('sheets', [])
+
 
     # if not values:
     #     print('No data found.')

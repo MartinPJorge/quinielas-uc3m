@@ -255,48 +255,8 @@ class SheetsOperator():
         freqs = self.valuesGetRange(sheetName + "!O1:Q14", "ROWS")
         difs = []
 
-        # Obtain freqs differences
-        for matchFreqs in freqs:
-            bigMax = max(range(len(matchFreqs)),
-                    key=lambda i: matchFreqs[i])[0]
-            bigVal = matchFreqs[bigMax]
-            del matchFreqs[bigMax]
-            lowMax = max(range(len(matchFreqs)),
-                    key=lambda i: matchFreqs[i])[0]
-            lowVal = matchFreqs[lowMax]
-
-            difs.append(abs(bigVal - lowVal))
-
-        # Obtain the double matches
-        doubleMatches = []
-        doubleResults = []
-        for i in range(7):
-            lowDifIndex = min(range(len(difs)),
-                    key=lambda i: difs[i])[0]
-
-            doubleMatches.append(lowDifIndex)
-            del difs[lowDifIndex]
-
-
-        # Fill resulting double columns
-        doubleCol = []
-        for i in range(len(difs)):
-            result = ''
-
-            if i in doubleMatches:
-                result = max(range(len(difs[lowDifIndex])),
-                        key=lambda i: difs[lowDifIndex][i])[0]
-            if result == 0:
-                result = '1'
-            elif result == 1:
-                result = 'X'
-            elif result == 2:
-                result = '2'
-            else:
-                result = ""
-
-            doubleCol.append(result)
-
+        # TODO - obtain mode
+        # TODO - create DoubleChooser
         
         # Write column in the sheet
         self.service.valuesUpdate(result, sheetTitle + "!R1:R14")

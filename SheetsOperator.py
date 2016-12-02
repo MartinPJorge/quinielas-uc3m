@@ -2,6 +2,7 @@ from __future__ import print_function
 import httplib2
 import os
 import codecs
+import re
 
 from apiclient import discovery
 from oauth2client import client
@@ -69,6 +70,49 @@ class SheetsOperator():
         self.service = discovery.build('sheets', 'v4', http=http,
                                   discoveryServiceUrl=discoveryUrl)
 
+
+    def deleteSheet(self, sheetId):
+        """Deletes a sheet with given sheetId
+
+        :sheetId: ID of the sheet to delete
+        :returns: None
+
+        """
+        body = {
+            "requests": [{
+                "deleteSheet": {
+                    "sheetId": sheetId
+                }
+            }]
+        }
+        self.service.spreadsheets().batchUpdate(
+                spreadsheetId=self.spreadsheetId, body=body).execute()
+
+
+    def checkBornFootballDay(self):
+        """Determines if people have created a new sheet to be filled
+        in case some it's found, it returns the number of football day
+        :returns: football day number or None, sheetId
+                  None,None in case of no new football day
+
+        """
+        newFootballDay = None
+        sheetId = None
+        result = self.service.spreadsheets().get(
+                spreadsheetId=self.spreadsheetId).execute()
+        sheets = result.get("sheets", [])
+        
+        i = 0
+        while not newFootballDay and i < len(sheets):
+            sheet = sheets[i]
+            title = sheet['properties']['title']
+            footballDay = re.search('^\d+$', title)
+            if footballDay:
+                newFootballDay = int(title)
+                sheetId = sheet['properties']['sheetId']
+            i += 1
+    
+        return newFootballDay, sheetId
 
 
     def createFootballDay(self, footballDay):
@@ -199,13 +243,79 @@ class SheetsOperator():
         self.valuesUpdate(matchRows, range_)
 
 
+    def fillDoubles(self, sheetName, numDoubles):
+        """Fills the doubles of a completed football day
+
+        :sheetName: name of the sheet
+        :numDoubles: obtains the number of doubles
+        :returns: None
+
+        """
+        
+        freqs = self.valuesGetRange(sheetName + "!O1:Q14", "ROWS")
+        difs = []
+
+        # Obtain freqs differences
+        for matchFreqs in freqs:
+            bigMax = max(range(len(matchFreqs)),
+                    key=lambda i: matchFreqs[i])[0]
+            bigVal = matchFreqs[bigMax]
+            del matchFreqs[bigMax]
+            lowMax = max(range(len(matchFreqs)),
+                    key=lambda i: matchFreqs[i])[0]
+            lowVal = matchFreqs[lowMax]
+
+            difs.append(abs(bigVal - lowVal))
+
+        # Obtain the double matches
+        doubleMatches = []
+        doubleResults = []
+        for i in range(7):
+            lowDifIndex = min(range(len(difs)),
+                    key=lambda i: difs[i])[0]
+
+            doubleMatches.append(lowDifIndex)
+            del difs[lowDifIndex]
+
+
+        # Fill resulting double columns
+        doubleCol = []
+        for i in range(len(difs)):
+            result = ''
+
+            if i in doubleMatches:
+                result = max(range(len(difs[lowDifIndex])),
+                        key=lambda i: difs[lowDifIndex][i])[0]
+            if result == 0:
+                result = '1'
+            elif result == 1:
+                result = 'X'
+            elif result == 2:
+                result = '2'
+            else:
+                result = ""
+
+            doubleCol.append(result)
+
+        
+        # Write column in the sheet
+        self.service.valuesUpdate(result, sheetTitle + "!R1:R14")
+
+
+
 if __name__ == '__main__':
     sheetsOp = SheetsOperator('client_secret.json', '.credentials', '1s8zR4sYi4avM6q9N6qUUz3nEIlNWTOjTdCudfaudWV8', 559840847, 'quinielas-uc3m', 'people.txt')
     sheetsOp.startService()
 
     # sheetsOp.createFootballDay(1000)
 
-    cols = sheetsOp.colsFilled('Jornada 24')
-    print(cols)
+    # cols = sheetsOp.colsFilled('Jornada 24')
+    # print(cols)
+
+    # num, id_ = sheetsOp.checkBornFootballDay()
+    # print(str(num))
+    # print(id_)
+
+    # sheetsOp.deleteSheet(135049881)
     
 

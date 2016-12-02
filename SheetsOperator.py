@@ -1,6 +1,7 @@
 from __future__ import print_function
 import httplib2
 import os
+import codecs
 
 from apiclient import discovery
 from oauth2client import client
@@ -13,13 +14,15 @@ class SheetsOperator():
     """Class with operations for google sheets"""
 
     def __init__(self, secretFile, credentials, spreadSheetId, plantillaId,
-            appName):
+            appName, people):
         """Inits a SheetsOperator
         :secretFile: secretFile path
         :credentials: credentials folder path
         :spreadsheetId: ID of the Google spreadsheet
         :plantillaId: ID of the `plantilla` sheet
         :appName: application name
+        :people: TXT file with the people playing this footballDay, this file
+                 should have a person name in each line
         """
         self.secretFile = secretFile
         self.credentials = credentials
@@ -27,6 +30,14 @@ class SheetsOperator():
         self.plantillaId = plantillaId
         self.service = None
         self.appName = appName
+        self.people = []
+
+        # Read people to play
+        f = codecs.open(people, 'r', encoding='utf8')
+        line = f.readline()
+        while line:
+            self.people.append(line[0:-1])
+            line = f.readline()
 
 
     def startService(self):
@@ -101,6 +112,69 @@ class SheetsOperator():
         return createdSheetId, title
 
 
+    def valuesUpdate(self, values, range_):
+        """Updates a batch of values in a given range
+
+        :values: range of values to update
+        :range: range to be updated
+        :returns: the result of the request
+
+        """
+        bodyUp = {
+            'valueInputOption': "USER_ENTERED",
+            'data': [
+                {
+                    'range': range_,
+                    'values': values
+                }
+            ]
+        }
+
+        result = self.service.spreadsheets().values().batchUpdate(spreadsheetId=self.spreadsheetId, body=bodyUp).execute()
+
+        return result
+
+
+    def valuesGetRange(self, range_, mode):
+        """Obtains the values in a range_
+        the range of values will be provided in `mode` order
+        ROW order - A1:B2 - [[A1,A2],[B1,B2]]
+        COLUMNS order - A1:B2 - [[A1,B1],[A2,B2]]
+
+        :range_: range of values to obtain
+        :mode: 'ROW' or 'COLUMNS'
+        :returns: matrix with values in row order
+
+        """
+
+        result = self.service.spreadsheets().values().get(spreadsheetId=self.spreadsheetId, range=range_, majorDimension=mode).execute()
+        return result.get('values', [])
+        
+
+    def colsFilled(self, sheetName):
+        """Checks if all the people have filled their columns
+        :sheetName: name of the sheet to get values from
+        :returns: boolean
+
+        """
+
+
+        range_ = sheetName + "!F1:M16"
+        peopleCols = self.valuesGetRange(range_, 'COLUMNS')
+        allFilled = True
+        i = 0
+        while allFilled and i < len(peopleCols):
+            personCol = peopleCols[i]
+            person = personCol[15]
+            if person in self.people:
+                pMatches = personCol[0:-1]
+                allFilled = allFilled and reduce(
+                        lambda x,y: x!=u'' and y!=u'',
+                        pMatches)
+            i += 1
+        
+        return allFilled
+
     def fillMatches(self, matches, sheetTitle):
         """Fills a new sheet with the football matches
 
@@ -122,41 +196,16 @@ class SheetsOperator():
             matchRows.append([match['local'], match['visiting']])
 
         range_ = sheetTitle + "!A1:B15"
-        bodyUp = {
-            'valueInputOption': "USER_ENTERED",
-            'data': [
-                {
-                    'range': range_,
-                    'values': matchRows
-                }
-            ]
-        }
-
-        result = self.service.spreadsheets().values().batchUpdate(spreadsheetId=self.spreadsheetId, body=bodyUp).execute()
+        self.valuesUpdate(matchRows, range_)
 
 
 if __name__ == '__main__':
-    sheetsOp = SheetsOperator('client_secret.json', '.credentials', '1s8zR4sYi4avM6q9N6qUUz3nEIlNWTOjTdCudfaudWV8', 559840847, 'quinielas-uc3m')
+    sheetsOp = SheetsOperator('client_secret.json', '.credentials', '1s8zR4sYi4avM6q9N6qUUz3nEIlNWTOjTdCudfaudWV8', 559840847, 'quinielas-uc3m', 'people.txt')
     sheetsOp.startService()
 
-    sheetsOp.createFootballDay(1000)
+    # sheetsOp.createFootballDay(1000)
 
+    cols = sheetsOp.colsFilled('Jornada 24')
+    print(cols)
     
-    sheetsOp.fillMatches([{'local': 'A', 'visiting': 'B'},
-        {'local': 'A', 'visiting': 'B'},
-        {'local': 'A', 'visiting': 'B'},
-        {'local': 'A', 'visiting': 'B'},
-        {'local': 'A', 'visiting': 'B'},
-        {'local': 'A', 'visiting': 'B'},
-        {'local': 'A', 'visiting': 'B'},
-        {'local': 'A', 'visiting': 'B'},
-        {'local': 'A', 'visiting': 'B'},
-        {'local': 'A', 'visiting': 'B'},
-        {'local': 'A', 'visiting': 'B'},
-        {'local': 'A', 'visiting': 'B'},
-        {'local': 'A', 'visiting': 'B'},
-        {'local': 'A', 'visiting': 'B'},
-        {'local': 'A', 'visiting': 'B'}
-        ], 'Jornada 1000')
-
 

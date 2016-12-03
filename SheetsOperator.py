@@ -230,10 +230,13 @@ class SheetsOperator():
 
         results = results[0]
         # Not all matches finished
-        if len(results) < 15:
-            return False
+        i = 0
+        someEmpty = False
+        while not someEmpty and i < len(results):
+            someEmpty = results[i]
+            i += 1
 
-        return True
+        return not someEmpty
 
 
     def valuesUpdate(self, values, range_):

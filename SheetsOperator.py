@@ -3,6 +3,9 @@ import httplib2
 import os
 import codecs
 import re
+import Utils_
+
+from DoubleChooser import DoubleChooser
 
 from apiclient import discovery
 from oauth2client import client
@@ -89,6 +92,24 @@ class SheetsOperator():
                 spreadsheetId=self.spreadsheetId, body=body).execute()
 
 
+    def getSheets(self):
+        """Obtains the sheets of current spreadsheet
+        :returns: [
+            {"properties": {
+                "title": --,
+                "sheetId": --,
+                ...
+            }},
+            ...
+            ]
+
+        """
+        result = self.service.spreadsheets().get(
+                spreadsheetId=self.spreadsheetId).execute()
+        sheets = result.get("sheets", [])
+
+        return sheets
+
     def checkBornFootballDay(self):
         """Determines if people have created a new sheet to be filled
         in case some it's found, it returns the number of football day
@@ -98,9 +119,7 @@ class SheetsOperator():
         """
         newFootballDay = None
         sheetId = None
-        result = self.service.spreadsheets().get(
-                spreadsheetId=self.spreadsheetId).execute()
-        sheets = result.get("sheets", [])
+        sheets = self.getSheets()
         
         i = 0
         while not newFootballDay and i < len(sheets):
@@ -114,6 +133,34 @@ class SheetsOperator():
     
         return newFootballDay, sheetId
 
+    
+    def getLastFootballDay(self):
+        """Obtains the sheet associated to the last football day
+        :returns: number(sheetId), sheetTitle
+
+        """
+        sheets = self.getSheets()
+        footballDays = []
+        sheetPos = []
+
+        # Push football day numbers
+        i = 0
+        for sheet in sheets:
+            title = sheet['properties']['title']
+            match = re.search("^Jornada (\d+)$", title)
+            if match:
+                footballDays.append(int(match.group(1)))
+                sheetPos.append(i)
+            i += 1
+
+        
+        # Find biggest football day number
+        _, idx = Utils_.maximo(footballDays)
+        sheetId = sheets[sheetPos[idx]]['properties']['sheetId']
+        sheetTitle = sheets[sheetPos[idx]]['properties']['title']
+
+        return sheetId, sheetTitle
+        
 
     def createFootballDay(self, footballDay):
         """Creates a football day sheet
@@ -154,6 +201,27 @@ class SheetsOperator():
         # createdSheetName = updatedSheet['addSheet']['properties']['title']
 
         return createdSheetId, title
+
+
+    def footballDayFinished(self, sheetTitle):
+        """Checks if the football day in `sheetTitle` has finished
+
+        :sheetTitle: title of the football day sheet
+        :returns: boolean
+
+        """
+        results = self.valuesGetRange(sheetTitle + "!E1:E15", "COLUMNS")
+
+        # Empty -> no completed match
+        if not results:
+            return False
+
+        results = results[0]
+        # Not all matches finished
+        if len(results) < 15:
+            return False
+
+        return True
 
 
     def valuesUpdate(self, values, range_):
@@ -253,19 +321,41 @@ class SheetsOperator():
         """
         
         freqs = self.valuesGetRange(sheetName + "!O1:Q14", "ROWS")
-        difs = []
+        modes = self.valuesGetRange(sheetName + "!N1:N14", "COLUMNS")
+        modes = modes[0]
 
-        # TODO - obtain mode
-        # TODO - create DoubleChooser
-        
-        # Write column in the sheet
-        self.service.valuesUpdate(result, sheetTitle + "!R1:R14")
+        # Convert values to integers
+        freqsInt = []
+        modesInt = [int(mode) for mode in modes]
+        for freqs_ in freqs:
+            row = []
+            for freq in freqs_:
+                row.append(int(freq))
+            freqsInt.append(row)
+
+        # Obtain the doubles
+        doubleChooser = DoubleChooser(freqsInt, modesInt,
+                len(self.people), numDoubles)
+        doubles = doubleChooser.tellDoubles()
+
+        # Encapsulate each value in a list
+        doubles_ = []
+        for double in doubles:
+            doubles_.append([double])
+        self.valuesUpdate(doubles_, sheetName + "!R1:R14")
 
 
 
 if __name__ == '__main__':
     sheetsOp = SheetsOperator('client_secret.json', '.credentials', '1s8zR4sYi4avM6q9N6qUUz3nEIlNWTOjTdCudfaudWV8', 559840847, 'quinielas-uc3m', 'people.txt')
     sheetsOp.startService()
+
+    # sheetsOp.fillDoubles('Hoja 18', 7)
+
+    # id_, lastDay = sheetsOp.getLastFootballDay()
+    # print("Last day: " + lastDay + " - id: " + str(id_))
+
+    # print(sheetsOp.footballDayFinished('Jornada 22'))
 
     # sheetsOp.createFootballDay(1000)
 

@@ -103,7 +103,8 @@ class QuinielaScraper:
 
         """
         self.currDay = footballDay
-        asQuiniela = requests.get(self.url + '/' + self.season + '/jornada_' + str(footballDay))
+        asQuiniela = requests.get(self.url + '/' + self.season +
+                '/jornada_' + str(footballDay))
         asQuiniela = asQuiniela.text
         self.scraper = BeautifulSoup(asQuiniela, "lxml")
 

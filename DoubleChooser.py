@@ -1,5 +1,6 @@
 import random
 import copy
+import Utils_
 
 class DoubleChooser():
 
@@ -18,44 +19,6 @@ class DoubleChooser():
         self.participants = participants
         self.numDoubles = numDoubles
         
-
-    
-
-    def maximo(self, arr):
-        """It gets the maximum value and its index
-
-        :arr: list of numbers
-        :returns: max value, index
-
-        """
-        maxVal = float('-inf')
-        maxIdx = -1
-
-        for i in range(len(arr)):
-            if arr[i] > maxVal:
-                maxVal = arr[i]
-                maxIdx = i
-
-        return maxVal, maxIdx
-
-
-    def minimo(self, arr):
-        """It gets the minimum value and its index
-
-        :arr: list of numbers
-        :returns: min value, index
-
-        """
-        minVal = float('inf')
-        minIdx = -1
-
-        for i in range(len(arr)):
-            if arr[i] < minVal:
-                minVal = arr[i]
-                minIdx = i
-
-        return minVal, minIdx
-
 
     def chooseRandomEls(self, arr, n):
         """Chooses `n` random elements of `arr`
@@ -96,7 +59,7 @@ class DoubleChooser():
         difsPos_ = []
         difsCounts = dict()
 
-        for dif in range(self.participants):
+        for dif in range(self.participants+1):
             i = 0
             counts = 0
             while i < len(difs):
@@ -127,7 +90,7 @@ class DoubleChooser():
         while len(chosenDoubles) < self.numDoubles:
             # If remains less than rows with dif -> choose randomly
             if difsCount[dif] > self.numDoubles - len(chosenDoubles):
-                randEls = chooseRandomEls(
+                randEls = self.chooseRandomEls(
                         difsPos[currIdx:currIdx+difsCount[dif]-1],
                         self.numDoubles - len(chosenDoubles))
                 chosenDoubles.extend(randEls)
@@ -164,9 +127,9 @@ class DoubleChooser():
                 elif selected == 1:
                     selected = 0
 
-                freqsCandidate = freqs[row]
+                freqsCandidate = self.freqs[row]
                 freqsCandidate[selected] = -1
-                _, secondMax = self.maximo(freqsCandidate)
+                _, secondMax = Utils_.maximo(freqsCandidate)
 
             # Translate secondMax to a value
             if secondMax == 0:
@@ -198,9 +161,9 @@ class DoubleChooser():
         # Obtain freqs differences
         i = 0
         for matchFreqs in freqs_:
-            bigVal, bigPos = self.maximo(matchFreqs)
+            bigVal, bigPos = Utils_.maximo(matchFreqs)
             del matchFreqs[bigPos]
-            lowVal, lowPos = self.maximo(matchFreqs)
+            lowVal, lowPos = Utils_.maximo(matchFreqs)
 
             difs.append(abs(bigVal - lowVal))
             difsPos.append(i)
@@ -208,6 +171,11 @@ class DoubleChooser():
 
         # Order the differences    
         difs_, difsPos_, difsCounts = self.orderDifs(difs, difsPos)
+
+        print('difs')
+        print(difs_)
+        print('difsPos')
+        print(difsPos_)
 
         # Select the double rows
         doubleRows = self.chooseDoubleRows(difs_, difsPos_, difsCounts)
@@ -219,45 +187,47 @@ class DoubleChooser():
 
 
 
-# Testing
+if __name__ == '__main__':
 
-freqs = [
-[0, 2, 3],
-[4, 1, 0],
-[4, 0, 1],
-[5, 0, 0],
-[3, 2, 0],
-[3, 1, 1],
-[3, 1, 1],
-[3, 0, 2],
-[2, 1, 2],
-[2, 0, 3],
-[5, 0, 0],
-[2, 0, 3],
-[4, 0, 1],
-[1, 2, 2]
-]
+    # Testing
 
-mode = [
-2,
-1,
-1,
-1,
-1,
-1,
-1,
-1,
-2,
-2,
-1,
-2,
-1,
-2,
-]
+    freqs = [
+    [0,2,4],
+    [3,2,1],
+    [4,2,0],
+    [2,4,0],
+    [6,0,0],
+    [3,1,2],
+    [4,1,1],
+    [2,1,3],
+    [6,0,0],
+    [6,0,0],
+    [3,2,1],
+    [5,1,0],
+    [4,1,1],
+    [6,0,0]
+    ]
 
-doubleChooser = DoubleChooser(freqs, mode, 6, 7)
-doubles = doubleChooser.tellDoubles()
+    mode = [
+    2,
+    1,
+    1,
+    0,
+    1,
+    1,
+    1,
+    2,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+    ]
 
-print(doubles)
+    doubleChooser = DoubleChooser(freqs, mode, 6, 7)
+    doubles = doubleChooser.tellDoubles()
+
+    print(doubles)
 
 

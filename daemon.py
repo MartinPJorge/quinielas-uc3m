@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from QuinielaScraper import QuinielaScraper
 from SheetsOperator import SheetsOperator
 from SheetsOperator import SheetsOperator

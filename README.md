@@ -48,3 +48,11 @@ The daemon waits for events to change for one state to another:
  *Note*: take into account that after the creation of the new sheet, you'll have to wait a maximum of `periodFinished` seconds before the daemon renames it, and fills it with the football matches.
  
  *Note*: make sure that before you create a new sheet, the matches are scheduled available at [http://resultados.as.com/quiniela/2016_2017/jornada_y](http://resultados.as.com/quiniela/2016_2017/), where `y` is the number of next quiniela day. Otherwise the daemon can crash.
+
+## Daemonize
+To daemonize the script you can run the following line:
+```bash
+nohup ./daemon.py > log.txt 2>&1 &
+```
+with this line, if script dies or the machine turns off, it won't start by itself.
+

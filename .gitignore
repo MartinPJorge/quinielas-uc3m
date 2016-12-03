@@ -3,3 +3,4 @@ client_secret.json
 people.txt
 config.json
 *.pyc
+log.txt

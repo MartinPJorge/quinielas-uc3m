@@ -61,7 +61,7 @@ class QuinielaScraper:
 
         resul = ''
         if resulLoc:
-            resul = resulLoc[0].text + resulVis[0].text
+            resul = resulLoc[0].text + '--' + resulVis[0].text
 
         return {'local': nameLoc,
                 'visiting': nameVis,
@@ -112,11 +112,14 @@ class QuinielaScraper:
         # Add all matches
         self.matches = []
         for i in range(15):
-            self.matches.append(self.parseMatch(i+1))
+            partido = self.parseMatch(i+1)
+            self.matches.append(partido)
 
 
 if __name__ == '__main__':
     as_ = QuinielaScraper('2016_2017')
-    as_.getFootballDay(24)
-    print(as_.getMatches())
+    as_.getFootballDay(22)
+    matches = as_.getMatches()
+
+
 

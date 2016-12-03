@@ -172,11 +172,6 @@ class DoubleChooser():
         # Order the differences    
         difs_, difsPos_, difsCounts = self.orderDifs(difs, difsPos)
 
-        print('difs')
-        print(difs_)
-        print('difsPos')
-        print(difsPos_)
-
         # Select the double rows
         doubleRows = self.chooseDoubleRows(difs_, difsPos_, difsCounts)
 

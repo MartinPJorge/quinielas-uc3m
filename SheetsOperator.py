@@ -34,10 +34,22 @@ class SheetsOperator():
         self.plantillaId = plantillaId
         self.service = None
         self.appName = appName
+        self.peopleF = people
         self.people = []
 
-        # Read people to play
-        f = codecs.open(people, 'r', encoding='utf8')
+        self.readPeople()
+
+
+        
+
+    def readPeople(self):
+        """Reads the people names in the file and store them in class
+        :returns: None
+
+        """
+        self.people = []
+
+        f = codecs.open(self.peopleF, 'r', encoding='utf8')
         line = f.readline()
         while line:
             self.people.append(line[0:-1])
@@ -271,6 +283,9 @@ class SheetsOperator():
         """
 
 
+        self.readPeople() # Refresh who's playing
+        print('people')
+        print(self.people)
         range_ = sheetName + "!F1:M16"
         peopleCols = self.valuesGetRange(range_, 'COLUMNS')
         allFilled = True
@@ -309,6 +324,29 @@ class SheetsOperator():
 
         range_ = sheetTitle + "!A1:B15"
         self.valuesUpdate(matchRows, range_)
+
+
+    def fillResults(self, matches, sheetTitle):
+        """Fill the results of the football day under the sheet `sheetTitle`
+
+        :matches: [
+            {
+                'local': 'Madrid',
+                'visiting': 'Valencia',
+                'result': ___
+            },
+            ...
+        ]
+        :sheetTitle: title name of the sheet
+        :returns: None
+
+        """
+        results = []
+        for match in matches:
+            results.append([match['result']])
+
+        range_ = sheetTitle + "!E1:E15"
+        self.valuesUpdate(results, range_)
 
 
     def doublesFilled(self, sheetTitle, numDoubles):
@@ -380,7 +418,7 @@ if __name__ == '__main__':
     sheetsOp.startService()
 
 
-    print(sheetsOp.doublesFilled('plantilla', 7))
+    # print(sheetsOp.doublesFilled('plantilla', 7))
 
     # sheetsOp.fillDoubles('Hoja 18', 7)
 

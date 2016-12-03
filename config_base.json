@@ -1,0 +1,15 @@
+
+{
+    "secretFile": "client_secret.json",
+    "credentials": ".credentials",
+    "spreadSheetId": "___SPREADSHEET_ID___",
+    "plantillaId": ___id_of_plantilla___ (number),
+    "appName": "___APP_NAME___",
+    "people": "people.txt",
+    "numDoubles": ___num_of_doubles___,
+    
+    "periodNew": ___seconds_interval_check_new___ (number),
+    "periodCompleted": ___seconds_interval_check_completed___ (number),
+    "periodFinished": ___seconds_interval_check_finished___ (number)
+
+}

@@ -311,6 +311,26 @@ class SheetsOperator():
         self.valuesUpdate(matchRows, range_)
 
 
+    def doublesFilled(self, sheetTitle, numDoubles):
+        """Checks if the doubles column is filled in the football day
+           associated to the sheet with name `sheetTitle`
+
+        :sheetTitle: title of the sheet
+        :numDoubles: number of doubles to be filled
+        :returns: boolean
+
+        """
+        doubles = self.valuesGetRange(sheetTitle + "!R1:R14", "COLUMNS")
+        if not doubles:
+            return False
+        doubles = doubles[0]
+        filledDoubles = 0
+        for double in doubles:
+            filledDoubles += 1 if double != u'' else 0
+
+        return filledDoubles == numDoubles
+
+
     def fillDoubles(self, sheetName, numDoubles):
         """Fills the doubles of a completed football day
 
@@ -347,8 +367,20 @@ class SheetsOperator():
 
 
 if __name__ == '__main__':
-    sheetsOp = SheetsOperator('client_secret.json', '.credentials', '1s8zR4sYi4avM6q9N6qUUz3nEIlNWTOjTdCudfaudWV8', 559840847, 'quinielas-uc3m', 'people.txt')
+    fConf = open('config.json', 'r')
+    config = json.load(fConf)
+    print ('Creating sheets operator')
+    sheetsOp = SheetsOperator(
+            config['secretFile'], 
+            config['credentials'],
+            config['spreadSheetId'],
+            config['plantillaId'],
+            config['appName'],
+            config['people'])
     sheetsOp.startService()
+
+
+    print(sheetsOp.doublesFilled('plantilla', 7))
 
     # sheetsOp.fillDoubles('Hoja 18', 7)
 

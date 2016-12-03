@@ -39,7 +39,7 @@ class QuinielaScraper:
             ], ...}
 
         """
-        return matches
+        return self.matches
 
 
     def parsePleno15(self):
@@ -118,5 +118,5 @@ class QuinielaScraper:
 if __name__ == '__main__':
     as_ = QuinielaScraper('2016_2017')
     as_.getFootballDay(24)
-    print(as_.parseMatch(1))
+    print(as_.getMatches())
 

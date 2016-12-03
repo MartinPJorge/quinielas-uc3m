@@ -43,13 +43,14 @@ class QuinielaDaemon():
 
         """
         # Create new football day sheet
-        print('\tCreating Jornada ' + str(self.numFootballDay))
+        self.printLog(State.NEW, 'creating Jornada ' +
+                str(self.numFootballDay))
         self.sheetsOp.deleteSheet(self.sheetId)
         self.sheetId = self.sheetsOp.createFootballDay(self.numFootballDay)
         self.sheetTitle = 'Jornada ' + str(self.numFootballDay)
 
         # Set scraper for new day, and get matches
-        print('\tDownloading matches for: ' + self.sheetTitle)
+        self.printLog(State.NEW, 'downloading matches for: ' + self.sheetTitle)
         self.quiniScraper.getFootballDay(self.numFootballDay)
         matches = self.quiniScraper.getMatches()
 
@@ -64,25 +65,23 @@ class QuinielaDaemon():
         """
 
         # New sheet created for a football Day
-        self.numFootballDay, self.sheetId = self.sheetsOp.checkBornFootballDay()
+        self.numFootballDay, self.sheetId =\
+            self.sheetsOp.checkBornFootballDay()
         self.sheetTitle = 'Jornada ' + str(self.numFootballDay)
 
         if self.numFootballDay:
             self.newInState = True
-            print('a')
             return State.NEW
         # No new football day created
         else:
             # Get last football day data
             self.sheetId, self.sheetTitle = self.sheetsOp.getLastFootballDay()
-            print('titulo: ' + self.sheetTitle)
             self.numFootballDay = re.search('\d+$', self.sheetTitle)
             self.numFootballDay = int(self.numFootballDay.group(0))
 
-            print('Last: ' + self.sheetTitle)
+            # Not filled columns from people
             if not self.sheetsOp.colsFilled(self.sheetTitle):
                 self.newInState = False
-                print('b')
                 return State.NEW
 
             # People completed columns
@@ -92,15 +91,28 @@ class QuinielaDaemon():
                 if not self.sheetsOp.doublesFilled(self.sheetTitle,
                         self.numDoubles):
                     self.newInState = True
-                    print('c new')
-                print('c')
                 return State.COMPLETED
             else:
-                print('e')
                 return State.FINISHED
 
-        print('e')
         
+    def printLog(self, state, msg):
+        """Prints a msg in log format
+
+        :state: (State) current state
+        :msg: message to be printed
+        :returns: None
+
+        """
+        stateStr = ''
+        if state == State.NEW:
+            stateStr = 'NEW'
+        elif state == State.COMPLETED:
+            stateStr = 'COMPLETED'
+        elif state == State.FINISHED:
+            stateStr = 'FINISHED'
+
+        print('[' + self.sheetTitle + '] - ' + stateStr + ' - ' + msg)
 
 
     def loop(self):
@@ -110,6 +122,8 @@ class QuinielaDaemon():
         """
         print('Getting current state')
         currSt = self.getCurrState()
+        justEntered = True
+        firstWait = True
 
         
         ###############
@@ -120,44 +134,68 @@ class QuinielaDaemon():
 
             # NEW QUINIELA
             if currSt == State.NEW:
+                if justEntered:
+                    self.printLog(currSt, 'just entered')
+                    justEntered = False
+                    firstWait = True
                 if self.newInState:
-                    print('NEW - setting up')
+                    self.printLog(currSt, 'setting up')
                     self.enterNew()
                     self.newInState = False
                 elif self.sheetsOp.colsFilled(self.sheetTitle):
-                    print('NEW - columns filled, go to COMPLETED')
+                    self.printLog(currSt, 'columns filled!')
                     currSt = State.COMPLETED
+                    justEntered = True
                     self.newInState = True
                 else:
-                    print('Espero')
+                    if firstWait:
+                        self.printLog(currSt, 'waiting cols to be filled')
+                        firstWait = False
                     waitTime = config['periodNew']
 
             # COMPLETED QUINIELA
             if currSt == State.COMPLETED:
+                if justEntered:
+                    self.printLog(currSt, 'just entered')
+                    justEntered = False
+                    firstWait = True
                 if self.newInState:
-                    print('COMPLETED - fill doubles')
+                    self.printLog(currSt, 'fill doubles')
                     self.sheetsOp.fillDoubles(self.sheetTitle, self.numDoubles)
                     self.newInState = False
                 elif self.sheetsOp.footballDayFinished(self.sheetTitle):
-                    print('COMPLETED - football day finished')
+                    self.printLog(currSt, 'football day finished')
                     currSt = State.FINISHED
+                    justEntered = True
                     self.newInState = True
                 else:
                     # Get results
-                    print('Foorball day: ' + str(self.numFootballDay))
                     self.quiniScraper.getFootballDay(self.numFootballDay)
                     matches = self.quiniScraper.getMatches()
                     self.sheetsOp.fillResults(matches, self.sheetTitle)
+
+                    if firstWait:
+                        self.printLog(currSt, 'waiting football day end')
+                        firstWait = False
                     waitTime = config['periodCompleted']
 
             # FINISHED QUINIELA
             if currSt == State.FINISHED:
-                self.numFootballDay, self.sheetId = self.sheetsOp.checkBornFootballDay()
+                if justEntered:
+                    self.printLog(currSt, 'just entered')
+                    justEntered = False
+                    firstWait = True
+                self.numFootballDay, self.sheetId =\
+                    self.sheetsOp.checkBornFootballDay()
                 if self.numFootballDay:
-                    print('FINISHED - New Football day detected!')
+                    self.printLog(currSt, ' new football day detected!')
                     currSt = State.NEW
+                    justEntered = False
                     self.newInState = True
                 else:
+                    if firstWait:
+                        self.printLog(currSt, 'waiting for new sheet')
+                        firstWait = False
                     waitTime = config['periodFinished']
 
             time.sleep(waitTime)

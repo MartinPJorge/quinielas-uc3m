@@ -284,8 +284,6 @@ class SheetsOperator():
 
 
         self.readPeople() # Refresh who's playing
-        print('people')
-        print(self.people)
         range_ = sheetName + "!F1:M16"
         peopleCols = self.valuesGetRange(range_, 'COLUMNS')
         allFilled = True
